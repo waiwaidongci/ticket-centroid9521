@@ -37,7 +37,12 @@ def validate_rows(rows):
             key = field["key"]
             value = row.get(key)
             value = value.strip() if isinstance(value, str) else ""
-            if not value or len(value) > field.get("max_length", 300):
+            if not value:
+                if field.get("required", True):
+                    raise ValueError(f"第 {index} 条来信的「{field['label']}」缺失或长度超限。")
+                ticket[key] = None
+                continue
+            if len(value) > field.get("max_length", 300):
                 raise ValueError(f"第 {index} 条来信的「{field['label']}」缺失或长度超限。")
             if field["type"] == "select" and value not in field["options"]:
                 raise ValueError(f"第 {index} 条来信的「{field['label']}」须为：{'、'.join(field['options'])}。")
@@ -178,7 +183,8 @@ def _queue_summary(labels, counts, centroids, predictions, majority):
     return rows, fsum(model_scores) / len(labels), fsum(baseline_scores) / len(labels)
 
 
-def analyze(rows, normalized_params):
+def prepare_acceptance(rows, normalized_params):
+    """按验收口径固定训练结果和留出件预测，供验收页与场次显著性核对共用。"""
     tickets = sorted(validate_rows(rows), key=lambda ticket: ticket["ticket_id"])
     params = _parameters(normalized_params)
     training = [ticket for ticket in tickets if ticket["split"] == "train"]
@@ -194,6 +200,23 @@ def analyze(rows, normalized_params):
     threshold = params["min_similarity"]
     predictions = [_prediction(ticket, idf, directions, threshold, majority) for ticket in holdout]
     labels = sorted(counts.keys() | {ticket["label"] for ticket in holdout})
+    return {
+        "params": params, "training": training, "holdout": holdout, "training_counts": counts,
+        "majority": majority, "idf": idf, "centroids": centroids,
+        "threshold": threshold, "predictions": predictions, "labels": labels,
+    }
+
+
+def analyze(rows, normalized_params):
+    prepared = prepare_acceptance(rows, normalized_params)
+    holdout = prepared["holdout"]
+    predictions = prepared["predictions"]
+    labels = prepared["labels"]
+    counts = prepared["training_counts"]
+    centroids = prepared["centroids"]
+    majority = prepared["majority"]
+    idf = prepared["idf"]
+    threshold = prepared["threshold"]
     queues, macro_f1, baseline_f1 = _queue_summary(labels, counts, centroids, predictions, majority)
 
     outcomes = Counter(row["outcome"] for row in predictions)
@@ -205,7 +228,7 @@ def analyze(rows, normalized_params):
     return {
         "state": "warning" if manual or wrong or delta <= 0 else "ok",
         "headline": f"留出 {total} 封，自动分流 {total - manual} 封（错投 {wrong} 封），人工分诊 {manual} 封。",
-        "note": f"训练 {len(training)} 封，使用 {len(idf)} 个训练词，最低相似度 {threshold:g}。多数类基线全部投向{majority}。",
+        "note": f"训练 {len(prepared['training'])} 封，使用 {len(idf)} 个训练词，最低相似度 {threshold:g}。多数类基线全部投向{majority}。",
         "metrics": [
             {"label": "分流宏 F1", "value": round(macro_f1, 6), "detail": f"{len(labels)} 个队列等权平均，人工分诊计入漏分"},
             {"label": "多数类宏 F1", "value": round(baseline_f1, 6), "detail": f"训练批多数队列为{majority}（{counts[majority]} 封）"},

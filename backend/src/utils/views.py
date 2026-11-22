@@ -27,3 +27,23 @@ def schedule(item):
 def delivery(item):
     return {'id': item.id, 'run_id': item.run_id, 'recipient': item.recipient,
             'state': item.state, 'detail': item.detail, 'created_at': iso(item.created_at)}
+
+
+def permutation(item, detail=False):
+    total = item.total_combinations or 0
+    settled = item.settled_combinations or 0
+    view = {
+        'id': item.id, 'dataset_id': item.dataset_id, 'name': item.name, 'status': item.status,
+        'author': item.author, 'params': item.params, 'error': item.error,
+        'total_combinations': total, 'settled_combinations': settled,
+        'hit_combinations': item.hit_combinations,
+        'progress': round(settled / total, 6) if total else 0.0,
+        'created_at': iso(item.created_at), 'finished_at': iso(item.finished_at),
+    }
+    if detail:
+        view.update(result=item.result,
+                    sessions=item.snapshot.get('sessions', []),
+                    tickets=item.snapshot.get('tickets', []),
+                    observed_delta=item.snapshot.get('observed_delta'))
+    return view
+

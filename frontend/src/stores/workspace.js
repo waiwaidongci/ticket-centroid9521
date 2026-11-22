@@ -18,5 +18,8 @@ export const workspace = {
   deliveries: () => call('/deliveries'),
   schedule: data => call('/schedules', data),
   disable: id => call(`/schedules/${id}/disable`, {}),
+  permutations: () => call('/permutations'),
+  getPermutation: id => call(`/permutations/${id}`),
+  startPermutation: data => call('/permutations', data),
   download: (path, filename) => saveFile(path, session.token, filename),
 };

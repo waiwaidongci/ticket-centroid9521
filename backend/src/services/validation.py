@@ -52,15 +52,21 @@ def parse_rows(text):
     rows = []
     try:
         headers = reader.fieldnames or []
-        if not required <= set(headers) or not set(headers) <= keys or len(headers) != len(set(headers)):
+        header_set = set(headers)
+        if not required <= header_set or not header_set <= keys or len(headers) != len(set(headers)):
             raise ValueError('CSV 表头与字段说明不符，请下载模板检查列名')
+        optional_missing = {field['key'] for field in fields
+                            if not field.get('required', True)} - header_set
         for raw in reader:
             if len(rows) >= 5000:
                 raise ValueError('一个数据批次最多导入 5000 行')
             try:
                 if None in raw or any(value is None for value in raw.values()):
                     raise ValueError('工作表的列数与表头不一致')
-                rows.append({field['key']: cell(field, raw.get(field['key'])) for field in fields})
+                normalized = dict(raw)
+                for key in optional_missing:
+                    normalized.setdefault(key, None)
+                rows.append({field['key']: cell(field, normalized.get(field['key'])) for field in fields})
             except ValueError as error:
                 raise ValueError(f'CSV 第 {reader.line_num} 行 · {error}') from None
     except csv.Error:

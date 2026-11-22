@@ -1,4 +1,8 @@
-"""去标识的固定训练批和留出批。"""
+"""去标识的固定训练批和留出批。
+
+训练件不归属具体演出场次，场次列留空。每封留出件都带演出场次，
+同一场演出的来信在显著性核对中按整场保留或互换两套去向。
+"""
 
 
 _TRAIN = (
@@ -15,19 +19,23 @@ _TRAIN = (
     ("失物招领", "演出后在座位附近丢了眼镜盒"),
 )
 _TEST = (
-    ("票务退改", "演出取消后提交退款，票款什么时候到账"),
-    ("票务退改", "订单买错场次，请帮我改签"),
-    ("票务退改", "临时出差，周日晚场的票能换场吗"),
-    ("无障碍服务", "想订轮椅席，从哪个无障碍入口进"),
-    ("无障碍服务", "散场后轮椅可以走电梯吗"),
-    ("失物招领", "散场之后把眼镜盒落在座位附近了"),
-    ("失物招领", "蓝牙助听器遗落包厢"),
+    ("票务退改", "演出取消后提交退款，票款什么时候到账", "11月18日晚场"),
+    ("票务退改", "订单买错场次，请帮我改签", "11月18日晚场"),
+    ("票务退改", "临时出差，周日晚场的票能换场吗", "11月19日晚场"),
+    ("无障碍服务", "想订轮椅席，从哪个无障碍入口进", "11月19日晚场"),
+    ("无障碍服务", "散场后轮椅可以走电梯吗", "11月19日下午场"),
+    ("失物招领", "散场之后把眼镜盒落在座位附近了", "11月19日下午场"),
+    ("失物招领", "蓝牙助听器遗落包厢", "11月17日晚场"),
 )
 
 
 def demo_rows() -> list[dict]:
-    return [
-        {"ticket_id": f"QQ-{split.upper()}-{index:02d}", "text": text, "label": label, "split": split}
-        for split, examples in (("train", _TRAIN), ("test", _TEST))
-        for index, (label, text) in enumerate(examples, start=1)
+    rows = [
+        {"ticket_id": f"QQ-TRAIN-{index:02d}", "text": text, "label": label, "split": "train", "session": None}
+        for index, (label, text) in enumerate(_TRAIN, start=1)
     ]
+    rows.extend(
+        {"ticket_id": f"QQ-TEST-{index:02d}", "text": text, "label": label, "split": "test", "session": session}
+        for index, (label, text, session) in enumerate(_TEST, start=1)
+    )
+    return rows
