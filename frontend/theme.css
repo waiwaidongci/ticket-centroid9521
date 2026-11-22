@@ -1,0 +1,21 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@500;600;700&family=Noto+Sans+SC:wght@400;500;600;700&display=swap');
+
+:root {
+  --paper: oklch(96.6% 0.018 279);
+  --ink: oklch(27% 0.039 279);
+  --muted: oklch(44% 0.047 279);
+  --panel: oklch(98.5% 0.01 279);
+  --line: oklch(83.5% 0.038 279);
+  --accent: oklch(73% 0.132 279);
+  --accent-ink: oklch(26% 0.069 279);
+  --accent-soft: oklch(92.5% 0.07 279);
+  --nav: oklch(24% 0.035 279);
+  --nav-ink: oklch(93% 0.039 279);
+  --display: 'DM Sans', 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  --body: 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+}
+
+/* theatre */
+.rail { box-shadow: inset -7px 0 var(--accent); } .header h1{letter-spacing:.03em}
+.table-wrap tbody tr:nth-child(even) { background-color: color-mix(in oklch, var(--accent-soft) 22%, var(--panel)); }
+.metrics, .table-wrap {font-variant-numeric:tabular-nums;}
